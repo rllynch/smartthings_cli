@@ -28,14 +28,14 @@ definition(
 
 preferences {
     section("Allow CLI Access to These Things...") {
-        input "switches", "capability.switch", title: "Switch", multiple: true
+        input "switches", "capability.switch", title: "Switch", required: false, multiple: true
         input "motions", "capability.motionSensor", title: "Motion", required: false, multiple: true
-        input "temperatures", "capability.temperatureMeasurement", title: "Temperature", multiple: true
+        input "temperatures", "capability.temperatureMeasurement", title: "Temperature", required: false, multiple: true
         input "contacts", "capability.contactSensor", title: "Contact", required: false, multiple: true
         input "accelerations", "capability.accelerationSensor", title: "Acceleration", required: false, multiple: true
         input "presences", "capability.presenceSensor", title: "Presence", required: false, multiple: true
-        input "batteries", "capability.battery", title: "Battery", multiple: true
-        input "threeaxes", "capability.threeAxis", title: "3 Axis", multiple: true
+        input "batteries", "capability.battery", title: "Battery", required: false, multiple: true
+        input "threeaxes", "capability.threeAxis", title: "3 Axis", required: false, multiple: true
     }
 }
 
