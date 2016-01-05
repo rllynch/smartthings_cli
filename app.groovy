@@ -31,6 +31,7 @@ preferences {
         input "switches", "capability.switch", title: "Switch", required: false, multiple: true
         input "motions", "capability.motionSensor", title: "Motion", required: false, multiple: true
         input "temperatures", "capability.temperatureMeasurement", title: "Temperature", required: false, multiple: true
+        input "humidities", "capability.relativeHumidityMeasurement", title: "Humidity", required: false, multiple: true
         input "contacts", "capability.contactSensor", title: "Contact", required: false, multiple: true
         input "accelerations", "capability.accelerationSensor", title: "Acceleration", required: false, multiple: true
         input "presences", "capability.presenceSensor", title: "Presence", required: false, multiple: true
@@ -90,6 +91,9 @@ private device_to_json(device, type) {
         case "temperature":
             values['state'] = s?.value.toFloat()
             break
+        case "humidity":
+            values['state'] = s?.value.toFloat()
+            break
         case "contact":
             values['state'] = (s?.value == "closed")
             break
@@ -117,6 +121,7 @@ def devices_for_type(type) {
         switch:       switches,
         motion:       motions,
         temperature:  temperatures,
+        humidity:     humidities,
         contact:      contacts,
         acceleration: accelerations,
         presence:     presences,

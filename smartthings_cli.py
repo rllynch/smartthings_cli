@@ -6,7 +6,7 @@ Copyright 2015 Richard L. Lynch <rich@richlynch.com>
 
 Description: Control SmartThings devices from the command line.
 
-Dependencies: twisted, requests
+Dependencies: twisted, requests, future
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 this file except in compliance with the License. You may obtain a copy of the
@@ -20,13 +20,17 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 """
 
+from future.standard_library import install_aliases
+install_aliases()
+
 import argparse
 import logging
 import requests
 import json
 import os
 import sys
-import urllib
+from urllib.parse import urlencode
+import socket
 from twisted.web import server, resource
 from twisted.internet import reactor
 
@@ -39,14 +43,14 @@ class OAuthHandler(resource.Resource):
 
     def render_GET(self, request): # pylint: disable=invalid-name
         """Handle GET from auth server"""
-        logging.debug('Received GET for %s', request.uri)
-        if 'code' in request.args:
-            self.auth_code = request.args['code'][0]
+        logging.debug('Received GET for %s / %s', request.uri, request.args)
+        if b'code' in request.args:
+            self.auth_code = request.args[b'code'][0].decode('utf-8')
             logging.debug('Parsed auth code: %s', self.auth_code)
             # Schedule shutdown of reactor
             reactor.callLater(1, reactor.stop) # pylint: disable=no-member
-            return 'smartthings_cli.py received auth code'
-        return ''
+            return 'smartthings_cli.py received auth code'.encode('utf-8')
+        return ''.encode('utf-8')
 
 def get_auth_code(redirect_url, bind_port, client_id):
     """Prompt user to allow access, wait for response from auth server"""
@@ -56,7 +60,7 @@ def get_auth_code(redirect_url, bind_port, client_id):
         'scope': 'app',
         'redirect_uri': redirect_url
     }
-    auth_code_url = 'https://graph.api.smartthings.com/oauth/authorize?' + urllib.urlencode(param)
+    auth_code_url = 'https://graph.api.smartthings.com/oauth/authorize?' + urlencode(param)
 
     logging.info('Please go to the following URL in your browser')
     logging.info('%s', auth_code_url)
@@ -81,7 +85,7 @@ def get_access_token(redirect_url, client_id, client_secret, auth_code):
         'scope': 'app',
         'code': auth_code
     }
-    access_token_url = 'https://graph.api.smartthings.com/oauth/token?' + urllib.urlencode(param)
+    access_token_url = 'https://graph.api.smartthings.com/oauth/token?' + urlencode(param)
 
     logging.debug("Requesting access token from: %s", access_token_url)
 
@@ -172,6 +176,21 @@ def save_config(config):
     with open(config_fn, 'w') as json_file:
         json.dump(config, json_file, indent=4)
 
+def get_this_host_ip():
+    '''Returns the IP address of this computer used to connect to the internet
+    (i.e. not the loopback interface's IP)'''
+    # Adapted from Alexander at http://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib/1267524#1267524
+    ghbn_ips = socket.gethostbyname_ex(socket.gethostname())[2]
+    ip_list = [ip for ip in ghbn_ips if not ip.startswith("127.")]
+    if len(ip_list) > 0:
+        return ip_list[0]
+    # Find the IP used to connect to the internet
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.connect(('8.8.8.8', 80))
+    gsn_ip = sock.getsockname()[0]
+    sock.close()
+    return gsn_ip
+
 def main():
     """Main function to handle use from command line"""
     # pylint: disable=too-many-locals
@@ -228,9 +247,8 @@ def main():
         bind_port = public_port
 
         if not public_ip:
-            jsonip_req = requests.get('http://jsonip.com')
-            public_ip = jsonip_req.json()['ip']
-            logging.debug('Public IP is: %s', public_ip)
+            public_ip = get_this_host_ip()
+            logging.debug('IP of this computer is: %s', public_ip)
 
         oauth_redirect_url = 'http://%s:%d/' % (public_ip, public_port)
         auth_code = get_auth_code(oauth_redirect_url, bind_port, client_id)
@@ -250,6 +268,7 @@ def main():
         'switch',
         'motion',
         'temperature',
+        'humidity',
         'contact',
         'acceleration',
         'presence',
