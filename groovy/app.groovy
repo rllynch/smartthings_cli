@@ -41,6 +41,11 @@ preferences {
 }
 
 mappings {
+    path("/routine") {
+        action: [
+            GET: "listRoutines"
+        ]
+    }
     path("/:type") {
         action: [
             GET: "listDevices"
@@ -49,6 +54,11 @@ mappings {
     path("/:type/:id/:cmd") {
         action: [
             GET: "updateDevice"
+        ]
+    }
+    path("/routine/:id") {
+        action: [
+            GET: "runRoutine"
         ]
     }
 }
@@ -142,5 +152,21 @@ void updateDevice() {
         httpError(404, "Device not found")
     } else {
         dev."$params.cmd"()
+    }
+}
+
+def listRoutines() {
+    location.getHelloHome().getPhrases().collect {
+        [id: it.id, label: it.label]
+    }
+}
+
+void runRoutine() {
+    def home = location.getHelloHome()
+    def routine = home.getPhrases().find { it.id == params.id }
+    if (!routine) {
+        httpError(404, "Routine not found")
+    } else {
+        home.execute(routine.label)
     }
 }
