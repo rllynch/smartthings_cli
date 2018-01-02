@@ -106,13 +106,14 @@ def get_endpoint_url(access_token):
     req = requests.get(endpoint_discovery_url, headers=headers)
     req_json = req.json()
     logging.debug('Received endpoint discovery response: %s', req_json)
+    endpoint_base_url = req_json[0]['base_url']
     endpoint_url = req_json[0]['url']
-    logging.info('Received endpoint URL: %s', endpoint_url)
-    return endpoint_url
+    logging.info('Received endpoint URL: %s%s', endpoint_base_url, endpoint_url)
+    return endpoint_base_url, endpoint_url
 
-def get_status(access_token, endpoint_url, device_type):
+def get_status(access_token, endpoint_base_url, endpoint_url, device_type):
     """Query the status and device ID of all devices of one type"""
-    url = 'https://graph.api.smartthings.com' + endpoint_url
+    url = endpoint_base_url + endpoint_url
     url += '/' + device_type
 
     headers = {'Authorization': 'Bearer ' + access_token}
@@ -136,7 +137,7 @@ def get_status(access_token, endpoint_url, device_type):
     return dev_list
 
 
-def update_device(access_token, endpoint_url, dev_list, device_type, device_name, cmd): # pylint: disable=too-many-arguments
+def update_device(access_token, endpoint_base_url, endpoint_url, dev_list, device_type, device_name, cmd): # pylint: disable=too-many-arguments
     """Issue a command to a device"""
 
     if not device_name in dev_list:
@@ -145,7 +146,7 @@ def update_device(access_token, endpoint_url, dev_list, device_type, device_name
 
     logging.info('Issuing "%s" command to %s "%s"', cmd, device_type, device_name)
 
-    url = 'https://graph.api.smartthings.com' + endpoint_url
+    url = endpoint_base_url + endpoint_url
     url += '/' + device_type
     url += '/' + dev_list[device_name]['device_id']
     url += '/' + cmd
@@ -238,6 +239,10 @@ def main():
     if 'access_token' in config:
         access_token = config['access_token']
 
+    endpoint_base_url = None
+    if 'endpoint_base_url' in config:
+        endpoint_base_url = config['endpoint_base_url']
+
     endpoint_url = None
     if 'endpoint_url' in config:
         endpoint_url = config['endpoint_url']
@@ -258,8 +263,9 @@ def main():
         config['client_secret'] = client_secret
         config['access_token'] = access_token
 
-    if not endpoint_url:
-        endpoint_url = get_endpoint_url(access_token)
+    if not endpoint_url or not endpoint_base_url:
+        endpoint_base_url, endpoint_url = get_endpoint_url(access_token)
+        config['endpoint_base_url'] = endpoint_base_url
         config['endpoint_url'] = endpoint_url
 
     dev_lists = {}
@@ -290,8 +296,8 @@ def main():
                 continue
 
             if not device_type in dev_lists:
-                dev_lists[device_type] = get_status(access_token, endpoint_url, device_type)
-            update_device(access_token, endpoint_url, dev_lists[device_type], device_type, device_name, device_cmd)
+                dev_lists[device_type] = get_status(access_token, endpoint_base_url, endpoint_url, device_type)
+            update_device(access_token, endpoint_base_url, endpoint_url, dev_lists[device_type], device_type, device_name, device_cmd)
 
         if cmd == 'query':
             device_type = cmd_list.pop(0)
@@ -302,7 +308,7 @@ def main():
                 continue
 
             if not device_type in dev_lists:
-                dev_lists[device_type] = get_status(access_token, endpoint_url, device_type)
+                dev_lists[device_type] = get_status(access_token, endpoint_base_url, endpoint_url, device_type)
 
             if device_name == 'all':
                 for device_name in dev_lists[device_type]:
