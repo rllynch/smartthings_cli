@@ -280,6 +280,7 @@ def main():
         'acceleration',
         'presence',
         'battery',
+        'lock',
         'threeAxis'
     ]
 
