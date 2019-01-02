@@ -37,6 +37,9 @@ preferences {
         input "presences", "capability.presenceSensor", title: "Presence", required: false, multiple: true
         input "batteries", "capability.battery", title: "Battery", required: false, multiple: true
         input "threeaxes", "capability.threeAxis", title: "3 Axis", required: false, multiple: true
+        input "powers", "capability.powerMeter", title: "Power Meter", required: false, multiple: true
+        input "energies", "capability.energyMeter", title: "Energy Meter", required: false, multiple: true
+        input "voltages", "capability.voltageMeasurement", title: "Voltage Meter", required: false, multiple: true
     }
 }
 
@@ -121,6 +124,27 @@ private device_to_json(device, type) {
             values['y'] = s?.xyzValue?.y
             values['z'] = s?.xyzValue?.z
             break
+        case "power":
+        	if (s?.value) {
+                values['state'] = s?.value.toFloat()
+            } else {
+            	values['state'] = 0.0
+            }
+            break
+        case "energy":
+        	if (s?.value) {
+                values['state'] = s?.value.toFloat()
+            } else {
+            	values['state'] = 0.0
+            }
+            break
+        case "voltage":
+        	if (s?.value) {
+                values['state'] = s?.value.toFloat()
+            } else {
+            	values['state'] = 0.0
+            }
+            break
     }
 
     json_dict
@@ -136,7 +160,10 @@ def devices_for_type(type) {
         acceleration: accelerations,
         presence:     presences,
         battery:      batteries,
-        threeAxis:    threeaxes
+        threeAxis:    threeaxes,
+        power:        powers,
+        energy:       energies,
+        voltage:      voltages
     ][type]
 }
 
