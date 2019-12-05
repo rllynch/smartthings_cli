@@ -314,15 +314,15 @@ def main():
             if device_name == 'all':
                 for device_name in dev_lists[device_type]:
                     device_state = dev_lists[device_type][device_name]['state']
-                    logging.info('%s %s: %s', device_type, device_name, device_state)
+                    logging.info('%s - "%s": %s', device_type, device_name, device_state)
                     if device_state:
                         return_code = 1
             else:
                 if not device_name in dev_lists[device_type]:
-                    logging.error('%s "%s" does not exist!', device_type, device_name)
+                    logging.error('%s - "%s" does not exist!', device_type, device_name)
                     continue
                 device_state = dev_lists[device_type][device_name]['state']
-                logging.info('%s %s: %s', device_type, device_name, device_state)
+                logging.info('%s - "%s": %s', device_type, device_name, device_state)
                 if device_state:
                     return_code = 1
 
