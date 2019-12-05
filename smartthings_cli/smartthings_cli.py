@@ -309,6 +309,8 @@ def main():
                 continue
 
             if not device_type in dev_lists:
+                # Get status only once for the device_type
+                logging.debug("Retrieving status for device type: %s", device_type)
                 dev_lists[device_type] = get_status(access_token, endpoint_base_url, endpoint_url, device_type)
 
             if device_name == 'all':
