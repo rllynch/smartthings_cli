@@ -280,6 +280,7 @@ def main():
         'acceleration',
         'presence',
         'battery',
+        'lock',
         'threeAxis'
     ]
 
@@ -300,30 +301,34 @@ def main():
             update_device(access_token, endpoint_base_url, endpoint_url, dev_lists[device_type], device_type, device_name, device_cmd)
 
         if cmd == 'query':
-            device_type = cmd_list.pop(0)
-            device_name = cmd_list.pop(0)
+            device_type_raw = cmd_list.pop(0)
+            device_name_raw = cmd_list.pop(0)
 
-            if not device_type in valid_device_types:
-                logging.error("Invalid device type: %s", device_type)
-                continue
+            check_types = valid_device_types if device_type_raw == 'all' else [device_type_raw]
+            for device_type in check_types:
+                if not device_type in valid_device_types:
+                    logging.error("Invalid device type: %s", device_type)
+                    continue
 
-            if not device_type in dev_lists:
-                dev_lists[device_type] = get_status(access_token, endpoint_base_url, endpoint_url, device_type)
+                if not device_type in dev_lists:
+                    # Get status only once for the device_type
+                    logging.debug("Retrieving status for device type: %s", device_type)
+                    dev_lists[device_type] = get_status(access_token, endpoint_base_url, endpoint_url, device_type)
 
-            if device_name == 'all':
-                for device_name in dev_lists[device_type]:
-                    device_state = dev_lists[device_type][device_name]['state']
-                    logging.info('%s %s: %s', device_type, device_name, device_state)
+                if device_name_raw == 'all':
+                    for device_name in dev_lists[device_type]:
+                        device_state = dev_lists[device_type][device_name]['state']
+                        logging.info('%s | "%s": %s', device_type, device_name, device_state)
+                        if device_state:
+                            return_code = 1
+                else:
+                    if not device_name_raw in dev_lists[device_type]:
+                        logging.error('%s | "%s" does not exist!', device_type, device_name_raw)
+                        continue
+                    device_state = dev_lists[device_type][device_name_raw]['state']
+                    logging.info('%s | "%s": %s', device_type, device_name_raw, device_state)
                     if device_state:
                         return_code = 1
-            else:
-                if not device_name in dev_lists[device_type]:
-                    logging.error('%s "%s" does not exist!', device_type, device_name)
-                    continue
-                device_state = dev_lists[device_type][device_name]['state']
-                logging.info('%s %s: %s', device_type, device_name, device_state)
-                if device_state:
-                    return_code = 1
 
     save_config(config)
     sys.exit(return_code)

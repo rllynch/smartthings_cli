@@ -37,6 +37,7 @@ preferences {
         input "presences", "capability.presenceSensor", title: "Presence", required: false, multiple: true
         input "batteries", "capability.battery", title: "Battery", required: false, multiple: true
         input "threeaxes", "capability.threeAxis", title: "3 Axis", required: false, multiple: true
+        input "locks", "capability.lock", title: "Lock", required: false, multiple: true
     }
 }
 
@@ -113,6 +114,9 @@ private device_to_json(device, type) {
         case "presence":
             values['state'] = (s?.value == "present")
             break
+        case "lock":
+            values['state'] = (s?.value == "locked")
+            break
         case "battery":
             values['state'] = s?.value.toFloat() / 100.0
             break
@@ -136,7 +140,8 @@ def devices_for_type(type) {
         acceleration: accelerations,
         presence:     presences,
         battery:      batteries,
-        threeAxis:    threeaxes
+        threeAxis:    threeaxes,
+        lock:         locks
     ][type]
 }
 
